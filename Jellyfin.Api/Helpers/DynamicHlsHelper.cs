@@ -196,29 +196,6 @@ public class DynamicHlsHelper
         {
             var encodingOptions = _serverConfigurationManager.GetEncodingOptions();
 
-            // Provide SDR HEVC entrance for backward compatibility.
-            if (encodingOptions.AllowHevcEncoding
-                && !encodingOptions.AllowAv1Encoding
-                && EncodingHelper.IsCopyCodec(state.OutputVideoCodec)
-                && state.VideoStream.VideoRange == VideoRange.HDR
-                && string.Equals(state.ActualOutputVideoCodec, "hevc", StringComparison.OrdinalIgnoreCase))
-            {
-                var requestedVideoProfiles = state.GetRequestedProfiles("hevc");
-                if (requestedVideoProfiles is not null && requestedVideoProfiles.Length > 0)
-                {
-                    // Force HEVC Main Profile and disable video stream copy.
-                    state.OutputVideoCodec = "hevc";
-                    var sdrVideoUrl = ReplaceProfile(playlistUrl, "hevc", string.Join(',', requestedVideoProfiles), "main");
-                    sdrVideoUrl += "&AllowVideoStreamCopy=false";
-
-                    // HACK: Use the same bitrate so that the client can choose by other attributes, such as color range.
-                    AppendPlaylist(builder, state, sdrVideoUrl, totalBitrate, subtitleGroup);
-
-                    // Restore the video codec
-                    state.OutputVideoCodec = "copy";
-                }
-            }
-
             // Provide Level 5.0 entrance for backward compatibility.
             // e.g. Apple A10 chips refuse the master playlist containing SDR HEVC Main Level 5.1 video,
             // but in fact it is capable of playing videos up to Level 6.1.
